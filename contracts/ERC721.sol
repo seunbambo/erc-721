@@ -2,6 +2,8 @@ pragma solidity ^0.8.2;
 
 contract ERC721 {
 
+    event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
+
     event Approval(address indexed _owner, address indexed _approved, uint256 _tokenId);
 
     event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
@@ -16,14 +18,14 @@ contract ERC721 {
 
     // Returns the number of NFTs assigned to an owner.
     function balanceOf(address owner) public view returns(uint256) {
-        require(owner != address(0), "Address is zero");
+        require(owner != address(0), "Address is zero.");
         return _balances[owner];
     }
 
     // Finds the owner of an NFT.
     function ownerOf(uint256 tokenId) public view returns(address) {
         address owner = _owners[tokenId];
-        require(owner != address(0), "TokenId does not exist");
+        require(owner != address(0), "TokenId does not exist.");
         return owner;
     }
 
@@ -39,16 +41,59 @@ contract ERC721 {
     }
 
     // Updates an approved address for an NFT.
-    function approved(address to, uint256 tokenId) public {
+    function approve(address to, uint256 tokenId) public {
         address owner = ownerOf(tokenId);
-        require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "Msg.sender is not the owner or an approved operator");
+        require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "Msg.sender is not the owner or an approved operator.");
         _tokenApprovals[tokenId] = to;
         emit Approval(owner, to, tokenId);
     }
 
     // Gets the approved address for a single NFT.
     function getApproved(uint256 tokenId) public view returns(address) {
-        require(_owners[tokenId] != address(0), "Token ID does not exist");
+        require(_owners[tokenId] != address(0), "Token ID does not exist.");
         return _tokenApprovals[tokenId];
     }
+
+    //  Transfer ownership of an NFT.
+    function transferFrom(address from, address to, uint256 tokenId) public {
+        address owner = ownerOf(tokenId);
+        require(
+            msg.sender == owner ||
+            getApproved(tokenId) == msg.sender ||
+            isApprovedForAll(owner, msg.sender),
+            "Msg.sender is not the owner or approved for transfer."
+        );
+        require(owner == from, "From address is not the owner.");
+        require(to != address(0), "Address is zero.");
+        require(_owners[tokenId] != address(0), "TokenID does not exist.");
+
+        approve(address(0), tokenId);
+
+        _balances[from] -= 1;
+        _balances[to] += 1;
+        _owners[tokenId] = to;
+
+        emit Transfer(from, to, tokenId);
+    }
+
+    // Standard transferFrom
+    // Checks if onERC721Received is implemented WHEN sending to smart contracts.
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public {
+        transferFrom(from, to, tokenId);
+        require(_checkOnERC721Received(), "Receiver not implemented.");
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public {
+        safeTransferFrom(from, to, tokenId, "");
+    }
+
+    // Oversimplified.
+    function _checkOnERC721Received() private pure returns(bool) {
+        return true;
+    }
+
+    // EIP165 : Query if a contract implements another interface.
+    function supportInterface(bytes4 interfaceId) public pure virtual returns(bool) {
+        return interfaceId == 0x00ac58cd;
+    } 
 }
