@@ -83,4 +83,11 @@ contract ERC1155 {
         // Oversimplified version.
         return true;
     }
+
+    // ERC165 Compliant.
+    // Tell everyone that we support the ERC1155 function.
+    // interfaceId == 0xd9b7a26
+    function suportsInterface(bytes4 interfaceId) public pure virtual returns(bool) {
+        return interfaceId == 0xd9b7a26;
+    } 
 }
