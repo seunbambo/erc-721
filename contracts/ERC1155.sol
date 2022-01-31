@@ -2,6 +2,8 @@ pragma solidity ^0.8.2;
 
 contract ERC1155 {
 
+    event TransferBatch(address _operator, address _from, address _to, uint256[] _ids, uint256[] _values);
+
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
 
     event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
@@ -57,7 +59,27 @@ contract ERC1155 {
         require(_checkOnERC1155Received(), "Receiver is not implemented.");
     }
 
-    function _checkOnERC1155Received() private pure returns(bool{
+    function _checkOnERC1155Received() private pure returns(bool) {
+        // Oversimplified version.
+        return true;
+    }
+
+    function safeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] amounts) public {
+        require(from == msg.sender || isApprovedForAll(from, msg.sesnder), "Msg.sender is not the owner or approved for transfer.");
+        require(to != address(0), "Address is zero.");
+        require(ids.length == amounts.length, "Ids and amounts are not the same.")
+        for (uint256 i = 0; i < ids.length; ++i) {
+            uint256 id = ids[i];
+            uint256 amount = amounts[i];
+
+            _transfer(from, to, id, amount);
+        }
+
+        emit TransferBatch(msg.sender, from, to ids, amounts);
+        require(_checkOnBatchERC1155Received(), "Receiver is not implemented.");
+    }
+
+    function _checkOnBatchERC1155Received() private pure returns(bool) {
         // Oversimplified version.
         return true;
     }
