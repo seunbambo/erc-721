@@ -2,6 +2,8 @@ pragma solidity ^0.8.2;
 
 contract ERC1155 {
 
+    event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
+
     event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
 
     // Mapping from TokenID to account balances.
@@ -37,5 +39,26 @@ contract ERC1155 {
     function setApprovalForAll(address operator, bool approved) public {
         _operatorApprovals[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    function _transfer(address from, address to, uint256 id, uint256 amount) private {
+        uint256 fromBalance = _balances[id][from];
+        require(fromBalance >= amount, "insufficient balance.");
+        _balances[id][from] = fromBalance - amount;
+        _balances[id][to] += amount;
+    }
+
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount) public virtual {
+        require(from == msg.sender || isApprovedForAll(from, msg.sesnder), "Msg.sender is not the owner or approved for transfer.");
+        require(to != address(0), "Address is zero.");
+        _transfer(from, to, id, amount);
+        emit TransferSingle(msg.sender, from, to, id, amount);
+
+        require(_checkOnERC1155Received(), "Receiver is not implemented.");
+    }
+
+    function _checkOnERC1155Received() private pure returns(bool{
+        // Oversimplified version.
+        return true;
     }
 }
